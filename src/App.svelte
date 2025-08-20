@@ -188,12 +188,16 @@ More text after the image.
   }
 
   $: sheets = (() => {
-    const arr = [];
-    if (!pages || !pages.length) return arr;
-    arr.push([pages[0]]);
-    for (let i = 1; i < pages.length; i += 2)
-      arr.push([pages[i], pages[i + 1]]);
-    return arr;
+    if (!pages || !pages.length) return [];
+
+    const out = [];
+
+    out.push([null, pages[0]]);
+
+    for (let i = 1; i < pages.length; i += 2) {
+      out.push([pages[i] ?? null, pages[i + 1] ?? null]);
+    }
+    return out;
   })();
 
   $: fullContentHtml,
@@ -451,7 +455,6 @@ More text after the image.
         </div>
       {/each}
     </div>
-
     <div id="print-root" aria-hidden="true" style="display:none">
       {#if printMode === "pages"}
         {#each pages as pageHtml}
