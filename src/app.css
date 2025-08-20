@@ -21,7 +21,6 @@ body {
   background: var(--bg);
   color: var(--ink);
   font: 14px/1.5 Helvetica, Arial;
-  /* overflow: hidden; */
 }
 
 .topbar {
@@ -59,6 +58,7 @@ body {
   border: 1px solid var(--border);
   border-radius: 6px;
   padding: 3px 4px;
+  cursor: pointer;
 }
 .topbar input[type="number"] {
   width: 56px;
@@ -67,24 +67,36 @@ body {
   border-color: var(--accent);
 }
 
+.btn-upload {
+  cursor: pointer;
+  background: var(--panel);
+  color: var(--ink);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 3px 4px;
+}
+.btn-upload:hover {
+  background: #ddd;
+}
+
 .workspace {
   height: calc(100% - 54px);
   display: grid;
-  grid-template-columns: 48% 8px 1fr;
+  grid-template-columns: 48% 2px 1fr;
   overflow: hidden;
 }
 .left {
   background: var(--panel);
   border-right: 1px solid var(--border);
-  padding: 5px;
   overflow-y: auto;
   overflow-x: hidden;
   display: flex;
   flex-direction: column;
 }
+
 .splitter {
   cursor: col-resize;
-  filter: brightness(1.05);
+  background-color: var(--border);
 }
 .right {
   padding: 5px;
@@ -95,7 +107,6 @@ body {
 .editor {
   flex: 1 1 auto;
   height: 100%;
-  border: 1px solid var(--border);
   overflow: hidden;
   display: grid;
   grid-template-rows: auto 1fr auto;
@@ -247,8 +258,34 @@ body {
   height: 100%;
   overflow: hidden;
 }
+.page-inner > :first-child,
+#print-root .print-inner > :first-child {
+  margin-top: 0 !important;
+}
+
+.page-inner :where(h1, h2, h3, h4, h5, h6, p, ul, ol, blockquote):first-child,
+#print-root
+  .print-inner
+  :where(h1, h2, h3, h4, h5, h6, p, ul, ol, blockquote):first-child {
+  margin-top: 0 !important;
+}
+
+.page-inner img:first-child,
+#print-root .print-inner img:first-child {
+  margin-top: 0 !important;
+}
+
+@page {
+  margin: 0 !important;
+  padding: 0 !important;
+}
 @media print {
-  /* existing… */
+  html,
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
   .topbar,
   .workspace .left,
   .workspace .splitter,
@@ -256,7 +293,6 @@ body {
     display: none !important;
   }
 
-  /* 👇 important: let the print DOM escape the scroller */
   .workspace {
     overflow: visible !important;
     height: auto !important;
@@ -267,7 +303,6 @@ body {
     overflow: visible !important;
   }
 
-  /* make sure print boxes actually render as blocks */
   #print-root {
     display: block !important;
   }
@@ -278,7 +313,6 @@ body {
     margin: 0 auto !important;
   }
 
-  /* images scale nicely in print DOM too */
   #print-root .print-inner img {
     max-width: 100%;
     height: auto;
