@@ -517,7 +517,28 @@ body {
     right: 3pt;
     text-align: right;
   }
+  
 }
+
+
+.page-inner .force-colbreak,
+.print-inner .force-colbreak {
+  break-before: column;
+  -webkit-column-break-before: always;
+  column-break-before: always;
+  height: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.page-inner .force-colbreak + :is(h1,h2,h3,h4,h5,h6,p,ul,ol,blockquote,div,section,figure,img) {
+  margin-top: 0 !important;
+}
+
+.print-inner .force-colbreak + :is(h1,h2,h3,h4,h5,h6,p,ul,ol,blockquote,div,section,figure,img) {
+  margin-top: 0 !important;
+}
+
 
 ::selection {
   background-color: var(--accent);
