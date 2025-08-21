@@ -3,24 +3,33 @@
   --panel: #ffffff;
   --ink: #1b1f27;
   --muted: #68707d;
-  --accent: lime;
+  --accent: orange;
   --border: #d9dee6;
-
   --grid-accent-1: rgba(255, 240, 171, 0.5);
   --grid-accent-2: rgba(173, 216, 255, 0.35);
 }
+
 * {
   box-sizing: border-box;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
+
+*::-webkit-scrollbar {
+  display: none;
+}
+
 html,
 body {
   height: 100%;
   margin: 0;
 }
+
 body {
   background: var(--bg);
   color: var(--ink);
-  font: 14px/1.5 Helvetica, Arial;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 12px;
 }
 
 .topbar {
@@ -35,14 +44,17 @@ body {
   background: #eef1f5;
   border-bottom: 1px solid var(--border);
 }
+
 .topbar .group {
   display: inline-flex;
   gap: 8px;
   align-items: center;
 }
+
 .topbar .group.right {
   margin-left: auto;
 }
+
 .topbar label {
   font-size: 12px;
   color: var(--muted);
@@ -50,6 +62,7 @@ body {
   align-items: center;
   gap: 6px;
 }
+
 .topbar input,
 .topbar select,
 .topbar button {
@@ -57,26 +70,16 @@ body {
   color: var(--ink);
   border: 1px solid var(--border);
   border-radius: 6px;
-  padding: 3px 4px;
+  /* padding: 3px 4px; */
   cursor: pointer;
 }
+
 .topbar input[type="number"] {
   width: 56px;
 }
+
 .topbar button.primary {
   border-color: var(--accent);
-}
-
-.btn-upload {
-  cursor: pointer;
-  background: var(--panel);
-  color: var(--ink);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 3px 4px;
-}
-.btn-upload:hover {
-  background: #ddd;
 }
 
 .workspace {
@@ -85,6 +88,7 @@ body {
   grid-template-columns: 48% 2px 1fr;
   overflow: hidden;
 }
+
 .left {
   background: var(--panel);
   border-right: 1px solid var(--border);
@@ -98,6 +102,7 @@ body {
   cursor: col-resize;
   background-color: var(--border);
 }
+
 .right {
   padding: 5px;
   overflow-y: auto;
@@ -111,6 +116,7 @@ body {
   display: grid;
   grid-template-rows: auto 1fr auto;
 }
+
 .editor .header {
   padding: 8px 10px;
   color: var(--muted);
@@ -120,6 +126,7 @@ body {
   justify-content: space-between;
   background: #fafbfc;
 }
+
 .editor textarea {
   width: 100%;
   height: 100%;
@@ -133,6 +140,7 @@ body {
     "Liberation Mono", monospace;
   tab-size: 2;
 }
+
 .editor .hint {
   border-top: 1px solid var(--border);
   padding: 6px 10px;
@@ -141,35 +149,44 @@ body {
   background: #fafbfc;
 }
 
+.editor .hint.storage-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
 .spreads {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px 0px;
+  gap: 10px 0;
   padding: 10px;
   max-width: fit-content;
   margin: 0 auto;
   overflow: scroll;
   height: 90dvh;
 }
+
 .spreads .page:first-child {
   grid-column: 2;
 }
 
 .page {
-  background: white;
+  background: #fff;
   color: #111;
-  box-shadow: inset 0px 0 10px rgba(0, 0, 0, 0.15);
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.15);
   position: relative;
   overflow: hidden;
   display: flex;
   flex-direction: column;
 }
+
 .page-inner {
   width: 100%;
   height: 100%;
   overflow: hidden;
   column-fill: auto;
 }
+
 .page-footer {
   position: absolute;
   bottom: 1rem;
@@ -184,29 +201,36 @@ body {
 
 .preview :where(h1, h2, h3, h4) {
   margin: 0 0 0.6em 0;
-  line-height: 1.2;
+  /* line-height: 1.2; */
   break-after: avoid;
 }
+
 .preview h1 {
   font-size: 1.8em;
 }
+
 .preview h2 {
   font-size: 1.3em;
 }
+
 .preview h3 {
   font-size: 1.1em;
 }
+
 .preview p,
 .preview li {
   font-size: 1em;
 }
+
 .preview p {
   margin: 0 0 0.75em 0;
 }
+
 .preview ul,
 .preview ol {
   margin: 0.5em 0 0.75em 1.25em;
 }
+
 .preview blockquote {
   margin: 0.75em 0;
   padding: 0.6em 0.9em;
@@ -215,10 +239,15 @@ body {
   color: #333;
   break-inside: avoid;
 }
+
 .preview img {
   max-width: 100%;
   display: block;
   break-inside: avoid;
+}
+
+.preview div {
+  margin-bottom: 1ch;
 }
 
 .full {
@@ -244,13 +273,20 @@ body {
   opacity: 0;
   pointer-events: none;
 }
-
-* {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
+#print-root .print-inner.fullpage {
+  padding: 0 !important;
+  column-count: 1 !important;
+  column-gap: 0 !important;
 }
-*::-webkit-scrollbar {
-  display: none;
+
+#print-root .print-inner.fullpage .img-page {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  margin: 0 !important;
+  object-fit: cover !important;
+  column-span: all !important;
+  break-inside: avoid !important;
 }
 
 #print-root .print-inner {
@@ -258,6 +294,7 @@ body {
   height: 100%;
   overflow: hidden;
 }
+
 .page-inner > :first-child,
 #print-root .print-inner > :first-child {
   margin-top: 0 !important;
@@ -275,10 +312,36 @@ body {
   margin-top: 0 !important;
 }
 
+.page-inner .img-page {
+  display: block;
+  width: calc(100% + var(--pad-left) + var(--pad-right));
+  height: calc(100% + var(--pad-top) + var(--pad-bottom));
+  margin-left: calc(-1 * var(--pad-left));
+  margin-top: calc(-1 * var(--pad-top));
+  object-fit: cover;
+  break-inside: avoid;
+  column-span: all;
+  padding: 0 !important;
+}
+
+.span-all {
+  column-span: all;
+  break-inside: avoid;
+  width: 100%;
+}
+
+.cols {
+  column-span: all;
+  break-inside: avoid;
+  width: 100%;
+  column-gap: var(--column-gap, 1em);
+}
+
 @page {
   margin: 0 !important;
   padding: 0 !important;
 }
+
 @media print {
   html,
   body {
@@ -297,8 +360,9 @@ body {
     overflow: visible !important;
     height: auto !important;
   }
+
   .right {
-    background: white !important;
+    background: #fff !important;
     padding: 0 !important;
     overflow: visible !important;
   }
@@ -306,6 +370,7 @@ body {
   #print-root {
     display: block !important;
   }
+
   #print-root .print-page,
   #print-root .print-sheet {
     display: block;
@@ -318,4 +383,8 @@ body {
     height: auto;
     display: block;
   }
+}
+
+::selection {
+  background-color: var(--accent);
 }
