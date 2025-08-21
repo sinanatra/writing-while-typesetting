@@ -1,6 +1,6 @@
 import { px_per_mm } from "./formats";
 
-function measureAtWidth(el, widthPx) {
+function measure_at_width(el, widthPx) {
   const probe = document.createElement("div");
   probe.style.position = "absolute";
   probe.style.left = "-99999px";
@@ -22,7 +22,7 @@ function measureAtWidth(el, widthPx) {
   return h;
 }
 
-function isSpanAll(el) {
+function is_span_all(el) {
   const cls = el.classList || { contains: () => false };
   return (
     cls.contains("full") ||
@@ -33,7 +33,7 @@ function isSpanAll(el) {
   );
 }
 
-function splitParagraphToFit(pEl, colWidth, pageHeight, _flattened = false) {
+function split_paragraph(pEl, colWidth, pageHeight, _flattened = false) {
   const rawText = (pEl.textContent ?? "").toString();
   if (!rawText.length) return { head: null, tail: null };
 
@@ -47,14 +47,14 @@ function splitParagraphToFit(pEl, colWidth, pageHeight, _flattened = false) {
     }
     const plain = document.createElement("p");
     plain.textContent = rawText;
-    return splitParagraphToFit(plain, colWidth, pageHeight, true);
+    return split_paragraph(plain, colWidth, pageHeight, true);
   }
 
   const tokens = rawText.split(/(\s+)/);
   const head = pEl.cloneNode(false);
 
   head.textContent = rawText;
-  if (measureAtWidth(head, colWidth) <= pageHeight) {
+  if (measure_at_width(head, colWidth) <= pageHeight) {
     return { head: pEl.cloneNode(true), tail: null };
   }
 
@@ -65,7 +65,7 @@ function splitParagraphToFit(pEl, colWidth, pageHeight, _flattened = false) {
     const candidate = acc + tokens[i];
     head.textContent = candidate;
 
-    const h = measureAtWidth(head, colWidth);
+    const h = measure_at_width(head, colWidth);
     if (h > pageHeight) break;
 
     if (h === lastHeight && candidate.length > acc.length) break;
@@ -81,7 +81,7 @@ function splitParagraphToFit(pEl, colWidth, pageHeight, _flattened = false) {
     for (; k < chars.length; k++) {
       const candidate = accChars + chars[k];
       head.textContent = candidate;
-      const h = measureAtWidth(head, colWidth);
+      const h = measure_at_width(head, colWidth);
       if (h > pageHeight) break;
       if (h === lastHeight && candidate.length > accChars.length) break;
       lastHeight = h;
@@ -102,16 +102,16 @@ function splitParagraphToFit(pEl, colWidth, pageHeight, _flattened = false) {
   return { head, tail: tail.textContent.trim() ? tail : null };
 }
 
-function splitElementForColumn(el, colWidth, pageHeight) {
+function split_element(el, colWidth, pageHeight) {
   const tag = el.tagName;
-  if (tag === "P") return splitParagraphToFit(el, colWidth, pageHeight);
+  if (tag === "P") return split_paragraph(el, colWidth, pageHeight);
   if (tag === "UL" || tag === "OL") {
     const head = el.cloneNode(false),
       tail = el.cloneNode(false);
     const items = Array.from(el.children);
     for (let i = 0; i < items.length; i++) {
       head.appendChild(items[i].cloneNode(true));
-      const h = measureAtWidth(head, colWidth);
+      const h = measure_at_width(head, colWidth);
       if (h > pageHeight) {
         head.removeChild(head.lastChild);
         for (let j = i; j < items.length; j++)
@@ -145,21 +145,21 @@ export function paginate({ measurerEl, pagePx, pad, columns, columnGap }) {
   let colIndex = 0;
   let colHeight = 0;
 
-  const closePage = () => {
+  const close_page = () => {
     pages.push(pageChunks.join(""));
     pageChunks = [];
     colIndex = 0;
     colHeight = 0;
   };
-  const nextColumnOrPage = () => {
+  const next_col_or_page = () => {
     if (colIndex < cols - 1) {
       colIndex += 1;
       colHeight = 0;
     } else {
-      closePage();
+      close_page();
     }
   };
-  const pushNow = (html) => pageChunks.push(html);
+  const push_now = (html) => pageChunks.push(html);
 
   for (let idx = 0; idx < nodes.length; idx++) {
     const n = nodes[idx];
@@ -167,12 +167,12 @@ export function paginate({ measurerEl, pagePx, pad, columns, columnGap }) {
     if (n.nodeType === 1) {
       const el = n;
       if (el.hasAttribute("data-pagebreak")) {
-        closePage();
+        close_page();
         continue;
       }
       if (el.hasAttribute("data-colbreak")) {
-        pushNow('<div class="force-colbreak" aria-hidden="true"></div>');
-        nextColumnOrPage();
+        push_now('<div class="force-colbreak" aria-hidden="true"></div>');
+        next_col_or_page();
         continue;
       }
     }
@@ -181,41 +181,41 @@ export function paginate({ measurerEl, pagePx, pad, columns, columnGap }) {
     if (["META", "LINK", "SCRIPT", "STYLE"].includes(n.tagName)) continue;
 
     const el = n;
-    const spanAll = isSpanAll(el);
-    const neededHeight = measureAtWidth(el, spanAll ? innerWidth : colWidth);
+    const spanAll = is_span_all(el);
+    const neededHeight = measure_at_width(el, spanAll ? innerWidth : colWidth);
 
     if (spanAll) {
-      if (colIndex !== 0 || colHeight > 0) closePage();
-      pushNow(el.outerHTML);
+      if (colIndex !== 0 || colHeight > 0) close_page();
+      push_now(el.outerHTML);
 
       colIndex = 0;
       colHeight = Math.min(pageHeight, colHeight + neededHeight);
-      if (colHeight >= pageHeight) closePage();
+      if (colHeight >= pageHeight) close_page();
       continue;
     }
 
     if (colHeight + neededHeight <= pageHeight) {
-      pushNow(el.outerHTML);
+      push_now(el.outerHTML);
       colHeight += neededHeight;
     } else {
-      nextColumnOrPage();
+      next_col_or_page();
 
       if (neededHeight > pageHeight) {
-        const { head, tail } = splitElementForColumn(el, colWidth, pageHeight);
+        const { head, tail } = split_element(el, colWidth, pageHeight);
         if (head) {
-          pushNow(head.outerHTML);
-          colHeight += measureAtWidth(head, colWidth);
+          push_now(head.outerHTML);
+          colHeight += measure_at_width(head, colWidth);
           if (tail) nodes.splice(idx + 1, 0, tail);
         } else {
-          pushNow(el.outerHTML);
-          closePage();
+          push_now(el.outerHTML);
+          close_page();
         }
 
         if (tail) {
           nodes.splice(idx + 1, 0, tail);
         }
       } else {
-        pushNow(el.outerHTML);
+        push_now(el.outerHTML);
         colHeight += neededHeight;
       }
     }

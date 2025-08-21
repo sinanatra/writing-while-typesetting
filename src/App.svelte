@@ -2,7 +2,7 @@
   import { onMount, onDestroy, tick } from "svelte";
   import { revoke_all_blob_urls } from "./lib/images";
   import { page_sizes, px_per_mm } from "./lib/formats";
-  import { preprocessMarkdown } from "./lib/markers";
+  import { preprocess_markdown } from "./lib/markers";
   import { paginate } from "./lib/paginate";
   import { inject_print_css } from "./lib/print_css";
   import {
@@ -82,7 +82,7 @@
     ${text_style}
   `;
 
-  $: full_content_html = preprocessMarkdown(markdown);
+  $: full_content_html = preprocess_markdown(markdown);
   let hydrated_html = "";
   let pages = [];
   let sheets = [];
@@ -526,26 +526,20 @@
         {/each}
       {:else}
         {#each sheets as pair}
-          <div class="print-sheet">
-            <div class="print-page">
-              <div
-                class="print-inner"
-                class:fullpage={(pair[0] || "").includes("img-page")}
-              >
-                {@html pair[0] || ""}
-              </div>
-            </div>
-            <div class="print-gutter"></div>
-            <div class="print-page">
-              <div
-                class="print-inner"
-                class:fullpage={(pair[1] || "").includes("img-page")}
-              >
-                {@html pair[1] || ""}
-              </div>
-            </div>
-          </div>
-        {/each}
+   <div class="print-sheet">
+     <div class="print-page">
+       <div class="print-inner" class:fullpage={(pair[0] || "").includes('img-page')}>
+         {@html pair[0] || ""}
+       </div>
+     </div>
+     <div class="print-gutter"></div>
+     <div class="print-page">
+       <div class="print-inner" class:fullpage={(pair[1] || "").includes('img-page')}>
+         {@html pair[1] || ""}
+       </div>
+     </div>
+   </div>
+ {/each}
       {/if}
     </div>
   </section>

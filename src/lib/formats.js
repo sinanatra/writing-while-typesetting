@@ -38,7 +38,7 @@ export const page_sizes = {
 
 export const px_per_mm = 96 / 25.4;
 
-export function buildPrintCSS({ sizeId }) {
+export function build_print_css({ sizeId }) {
   const s = page_sizes[sizeId] ?? page_sizes.A7;
   const mm = (n) => `${n}mm`;
 
