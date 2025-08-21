@@ -88,6 +88,8 @@
   let sheets = [];
   let measurer_el;
   let storage_text = "";
+  let run_heads = [];
+  let run_foots = [];
 
   async function refresh_storage_text() {
     const usage = await current_usage_mb();
@@ -102,13 +104,18 @@
       await tick();
       hydrated_html = await hydrate_html(full_content_html);
       await tick();
-      pages = paginate({
+
+      const res = paginate({
         measurerEl: measurer_el,
         pagePx: page_px,
         pad,
         columns,
         columnGap: column_gap,
       });
+      pages = res.pages;
+      run_heads = res.heads;
+      run_foots = res.foots;
+
       const out = [];
       if (pages.length) {
         out.push([null, pages[0]]);
@@ -195,6 +202,8 @@
 
   const insert_page_break = () => insert_at_cursor("\n\n[[pagebreak]]\n\n");
   const insert_col_break = () => insert_at_cursor("\n\n[[colbreak]]\n\n");
+  const insert_head = () => insert_at_cursor("\n\n[[head: Your Heading]]\n\n");
+  const insert_foot = () => insert_at_cursor("\n\n[[foot: Your Footer]]\n\n");
 
   async function insert_image_file(file, full = false) {
     const { key, file: saved } = await save_image_to_idb(file);
@@ -389,7 +398,7 @@
       </select>
     </label>
     <label
-      >Size <input type="number" min="5" step="0.5" bind:value={base_font_pt} />
+      >Size <input type="number" min="3" step="0.5" bind:value={base_font_pt} />
       pt</label
     >
     <label
@@ -438,6 +447,9 @@
   </div>
 
   <div class="group right">
+    <button on:click={insert_head}>+ Head</button>
+    <button on:click={insert_foot}>+ Foot</button>
+
     <input
       type="file"
       id="image_input"
@@ -466,6 +478,7 @@
     {/each}
     <button on:click={insert_col_break}>+ Col Break</button>
     <button on:click={insert_page_break}>+ Page Break</button>
+
     <button class="primary" on:click={print_pdf}>Print / PDF</button>
   </div>
 </div>
@@ -504,6 +517,7 @@
     <div class="spreads">
       {#each pages as page_html, i}
         <div class="page" style={page_style}>
+          <div class="page-running-header">{run_heads[i] || ""}</div>
           <div
             class="page-inner preview"
             style={inner_style}
@@ -511,42 +525,66 @@
           >
             {@html page_html}
           </div>
-          {#if i > 0}<div class="page-footer">{i + 1}</div>{/if}
+          <div class="page-running-footer">{run_foots[i] || ""}</div>
+          <div class="page-number {i % 2 === 0 ? 'rig' : 'lef'}">
+            {i + 1}
+          </div>
         </div>
       {/each}
     </div>
 
     <div id="print-root" aria-hidden="true" style="display:none">
       {#if print_mode === "pages"}
-        {#each pages as page_html}
+        {#each pages as page_html, i}
           <div class="print-page">
+            <div class="print-running-header">{run_heads[i] || ""}</div>
             <div
               class="print-inner"
               class:fullpage={page_html.includes("img-page")}
             >
               {@html page_html}
             </div>
+            <div class="print-running-footer">{run_foots[i] || ""}</div>
+            <div class="print-page-number {i % 2 === 0 ? 'rig' : 'lef'}">
+              {i + 1}
+            </div>
           </div>
         {/each}
       {:else}
-        {#each sheets as pair}
+        {#each sheets as pair, sidx}
           <div class="print-sheet">
             <div class="print-page">
+              <div class="print-running-header">
+                {sidx === 0 ? "" : run_heads[2 * sidx - 1] || ""}
+              </div>
               <div
                 class="print-inner"
                 class:fullpage={(pair[0] || "").includes("img-page")}
               >
                 {@html pair[0] || ""}
               </div>
+              <div class="print-running-footer">
+                {sidx === 0 ? "" : run_foots[2 * sidx - 1] || ""}
+              </div>
+              <div class="print-page-number lef">{2 * sidx + 1}</div>
             </div>
+
             <div class="print-gutter"></div>
+
             <div class="print-page">
+              <div class="print-running-header">
+                {run_heads[2 * sidx] || (sidx === 0 ? run_heads[0] || "" : "")}
+              </div>
               <div
                 class="print-inner"
                 class:fullpage={(pair[1] || "").includes("img-page")}
               >
                 {@html pair[1] || ""}
               </div>
+              <div class="print-running-footer">
+                {run_foots[2 * sidx] || (sidx === 0 ? run_foots[0] || "" : "")}
+              </div>
+              <div class="print-page-number rig">{2 * sidx + 2}</div>
             </div>
           </div>
         {/each}

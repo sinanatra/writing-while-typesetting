@@ -1,4 +1,5 @@
 import { px_per_mm } from "./formats";
+
 let measure_host = null;
 
 function measure_at_width(el, width_px) {
@@ -127,7 +128,8 @@ export function paginate(args) {
   const pad = args.pad;
   const columns = args.columns;
   const column_gap = args.column_gap ?? args.columnGap;
-  if (!measurer_el || !page_px || !pad) return [];
+  if (!measurer_el || !page_px || !pad)
+    return { pages: [], heads: [], foots: [] };
   measure_host = measurer_el;
 
   const page_height = page_px.h - (pad.top + pad.bottom);
@@ -141,14 +143,20 @@ export function paginate(args) {
     (n) => n.nodeType === 1
   );
   const pages = [];
+  const heads = [];
+  const foots = [];
 
   let page_chunks = [];
   let col_index = 0;
   let col_height = 0;
   let prev_mb = 0;
+  let run_head = "";
+  let run_foot = "";
 
   const close_page = () => {
     pages.push(page_chunks.join(""));
+    heads.push(run_head);
+    foots.push(run_foot);
     page_chunks = [];
     col_index = 0;
     col_height = 0;
@@ -172,7 +180,14 @@ export function paginate(args) {
   let i = 0;
   while (i < nodes.length) {
     const n = nodes[i];
-    if (["META", "LINK", "SCRIPT", "STYLE"].includes(n.tagName)) {
+
+    if (n.hasAttribute && n.hasAttribute("data-runhead")) {
+      run_head = n.getAttribute("data-runhead") || "";
+      i++;
+      continue;
+    }
+    if (n.hasAttribute && n.hasAttribute("data-runfoot")) {
+      run_foot = n.getAttribute("data-runfoot") || "";
       i++;
       continue;
     }
@@ -182,15 +197,20 @@ export function paginate(args) {
       i++;
       continue;
     }
-
     if (n.hasAttribute && n.hasAttribute("data-colbreak")) {
-      push_now('<div class="force-colbreak" aria-hidden="true"></div>');
+      push_now('<div class="force-colbreak"></div>');
       next_col_or_page();
       i++;
       continue;
     }
 
+    if (["META", "LINK", "SCRIPT", "STYLE"].includes(n.tagName)) {
+      i++;
+      continue;
+    }
+
     const el = n;
+
     if (is_span_all(el)) {
       if (col_index !== 0 || col_height > 0) close_page();
       push_now(el.outerHTML);
@@ -245,6 +265,9 @@ export function paginate(args) {
   }
 
   pages.push(page_chunks.join(""));
+  heads.push(run_head);
+  foots.push(run_foot);
+
   measure_host = null;
-  return pages;
+  return { pages, heads, foots };
 }
