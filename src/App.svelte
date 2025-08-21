@@ -504,7 +504,11 @@
     <div class="spreads">
       {#each pages as page_html, i}
         <div class="page" style={page_style}>
-          <div class="page-inner preview" style={inner_style}>
+          <div
+            class="page-inner preview"
+            style={inner_style}
+            class:fullpage={page_html.includes("img-page")}
+          >
             {@html page_html}
           </div>
           {#if i > 0}<div class="page-footer">{i + 1}</div>{/if}
@@ -526,20 +530,26 @@
         {/each}
       {:else}
         {#each sheets as pair}
-   <div class="print-sheet">
-     <div class="print-page">
-       <div class="print-inner" class:fullpage={(pair[0] || "").includes('img-page')}>
-         {@html pair[0] || ""}
-       </div>
-     </div>
-     <div class="print-gutter"></div>
-     <div class="print-page">
-       <div class="print-inner" class:fullpage={(pair[1] || "").includes('img-page')}>
-         {@html pair[1] || ""}
-       </div>
-     </div>
-   </div>
- {/each}
+          <div class="print-sheet">
+            <div class="print-page">
+              <div
+                class="print-inner"
+                class:fullpage={(pair[0] || "").includes("img-page")}
+              >
+                {@html pair[0] || ""}
+              </div>
+            </div>
+            <div class="print-gutter"></div>
+            <div class="print-page">
+              <div
+                class="print-inner"
+                class:fullpage={(pair[1] || "").includes("img-page")}
+              >
+                {@html pair[1] || ""}
+              </div>
+            </div>
+          </div>
+        {/each}
       {/if}
     </div>
   </section>

@@ -27,7 +27,7 @@ function measure_at_width(el, width_px) {
   const h = clone.offsetHeight + mt + mb;
 
   probe.remove();
-  return h;
+  return { h, mt, mb };
 }
 
 function is_span_all(el) {
@@ -63,7 +63,7 @@ function split_paragraph(p_el, col_width, page_height, _flattened = false) {
 
   const full = p_el.cloneNode(false);
   full.textContent = text;
-  if (measure_at_width(full, col_width) <= page_height) {
+  if (measure_at_width(full, col_width).h <= page_height) {
     return { head: p_el.cloneNode(true), tail: null };
   }
 
@@ -75,8 +75,8 @@ function split_paragraph(p_el, col_width, page_height, _flattened = false) {
   while (lo < hi) {
     const mid = (lo + hi + 1) >> 1;
     head.textContent = text.slice(0, mid);
-    const h = measure_at_width(head, col_width);
-    if (h <= page_height) lo = mid;
+    const m = measure_at_width(head, col_width);
+    if (m.h <= page_height) lo = mid;
     else hi = mid - 1;
   }
 
@@ -105,8 +105,8 @@ function split_element(el, col_width, page_height) {
     const items = Array.from(el.children);
     for (let i = 0; i < items.length; i++) {
       head.appendChild(items[i].cloneNode(true));
-      const h = measure_at_width(head, col_width);
-      if (h > page_height) {
+      const m = measure_at_width(head, col_width);
+      if (m.h > page_height) {
         head.removeChild(head.lastChild);
         for (let j = i; j < items.length; j++)
           tail.appendChild(items[j].cloneNode(true));
@@ -130,96 +130,121 @@ export function paginate(args) {
   if (!measurer_el || !page_px || !pad) return [];
   measure_host = measurer_el;
 
-  const page_height = page_px.h - (args.pad.top + args.pad.bottom);
+  const page_height = page_px.h - (pad.top + pad.bottom);
   const cols = Math.max(1, Number(columns) || 1);
   const col_gap_px = (Number(column_gap) || 0) * px_per_mm;
   const inner_width = page_px.w - (pad.left + pad.right);
   const col_width =
     cols > 1 ? (inner_width - col_gap_px * (cols - 1)) / cols : inner_width;
-  const nodes = Array.from(measurer_el.childNodes);
+
+  const nodes = Array.from(measurer_el.childNodes).filter(
+    (n) => n.nodeType === 1
+  );
   const pages = [];
 
   let page_chunks = [];
   let col_index = 0;
   let col_height = 0;
+  let prev_mb = 0;
 
   const close_page = () => {
     pages.push(page_chunks.join(""));
     page_chunks = [];
     col_index = 0;
     col_height = 0;
+    prev_mb = 0;
   };
+
   const next_col_or_page = () => {
     if (col_index < cols - 1) {
       col_index += 1;
       col_height = 0;
+      prev_mb = 0;
     } else {
       close_page();
     }
   };
-  const push_now = (html) => page_chunks.push(html);
 
-  for (let idx = 0; idx < nodes.length; idx++) {
-    const n = nodes[idx];
+  const push_now = (html) => {
+    page_chunks.push(html);
+  };
 
-    if (n.nodeType === 1) {
-      const el = n;
-      if (el.hasAttribute("data-pagebreak")) {
-        close_page();
+  let i = 0;
+  while (i < nodes.length) {
+    const n = nodes[i];
+    if (["META", "LINK", "SCRIPT", "STYLE"].includes(n.tagName)) {
+      i++;
+      continue;
+    }
+
+    if (n.hasAttribute && n.hasAttribute("data-pagebreak")) {
+      close_page();
+      i++;
+      continue;
+    }
+
+    if (n.hasAttribute && n.hasAttribute("data-colbreak")) {
+      push_now('<div class="force-colbreak" aria-hidden="true"></div>');
+      next_col_or_page();
+      i++;
+      continue;
+    }
+
+    const el = n;
+    if (is_span_all(el)) {
+      if (col_index !== 0 || col_height > 0) close_page();
+      push_now(el.outerHTML);
+      close_page();
+      i++;
+      continue;
+    }
+
+    const meas = measure_at_width(el, col_width);
+    const inc = col_height === 0 ? meas.h : meas.h - Math.min(prev_mb, meas.mt);
+
+    if (inc <= page_height - col_height) {
+      push_now(el.outerHTML);
+      col_height += inc;
+      prev_mb = meas.mb;
+      i++;
+      continue;
+    }
+
+    if (meas.h <= page_height) {
+      next_col_or_page();
+      continue;
+    }
+
+    const { head, tail } = split_element(
+      el,
+      col_width,
+      page_height - col_height
+    );
+    if (head) {
+      const head_meas = measure_at_width(head, col_width);
+      const head_inc =
+        col_height === 0
+          ? head_meas.h
+          : head_meas.h - Math.min(prev_mb, head_meas.mt);
+      if (head_inc <= page_height - col_height) {
+        push_now(head.outerHTML);
+        col_height += head_inc;
+        prev_mb = head_meas.mb;
+        if (tail) nodes.splice(i + 1, 0, tail);
+        i++;
         continue;
-      }
-      if (el.hasAttribute("data-colbreak")) {
-        push_now('<div class="force-colbreak" aria-hidden="true"></div>');
+      } else {
         next_col_or_page();
         continue;
       }
     }
 
-    if (n.nodeType !== 1) continue;
-    if (["META", "LINK", "SCRIPT", "STYLE"].includes(n.tagName)) continue;
-
-    const el = n;
-    const span_all = is_span_all(el);
-    const needed_height = measure_at_width(
-      el,
-      span_all ? inner_width : col_width
-    );
-
-    if (span_all) {
-      const h_full = measure_at_width(el, inner_width);
-      if (col_index !== 0) close_page();
-      if (col_height > 0 && page_height - col_height < h_full) close_page();
-      push_now(el.outerHTML);
-      col_index = 0;
-      col_height = h_full <= page_height ? h_full : page_height;
-      if (col_height >= page_height) close_page();
-      continue;
-    }
-
-    if (col_height + needed_height <= page_height) {
-      push_now(el.outerHTML);
-      col_height += needed_height;
-    } else {
-      next_col_or_page();
-      if (needed_height > page_height) {
-        const { head, tail } = split_element(el, col_width, page_height);
-        if (head) {
-          push_now(head.outerHTML);
-          col_height += measure_at_width(head, col_width);
-          if (tail) nodes.splice(idx + 1, 0, tail);
-        } else {
-          idx--;
-        }
-        continue;
-      } else {
-        idx--;
-        continue;
-      }
-    }
+    push_now(el.outerHTML);
+    close_page();
+    i++;
   }
 
   pages.push(page_chunks.join(""));
-  const out = pages;
   measure_host = null;
-  return out;
+  return pages;
 }

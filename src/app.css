@@ -312,7 +312,7 @@ body {
   margin-top: 0 !important;
 }
 
-.page-inner .img-page {
+.page-inner:not(.fullpage) .img-page {
   display: block;
   width: calc(100% + var(--pad-left) + var(--pad-right));
   height: calc(100% + var(--pad-top) + var(--pad-bottom));
@@ -321,6 +321,23 @@ body {
   object-fit: cover;
   break-inside: avoid;
   column-span: all;
+  padding: 0 !important;
+}
+
+.page-inner.fullpage {
+  padding: 0 !important;
+  column-count: 1 !important;
+  column-gap: 0 !important;
+}
+
+.page-inner.fullpage .img-page {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  margin: 0 !important;
+  object-fit: cover !important;
+  column-span: all !important;
+  break-inside: avoid !important;
   padding: 0 !important;
 }
 
