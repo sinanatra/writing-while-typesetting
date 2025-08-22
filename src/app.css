@@ -136,8 +136,7 @@ body {
   color: var(--ink);
   border: none;
   outline: none;
-  font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas,
-    "Liberation Mono", monospace;
+  font: 13px/1.5 ui-monospace, monospace;
   tab-size: 2;
 }
 
@@ -364,9 +363,11 @@ body {
   text-align: center;
   pointer-events: none;
 }
+
 .page-running-header {
   top: 4px;
 }
+
 .page-running-footer {
   bottom: 4px;
 }
@@ -517,9 +518,7 @@ body {
     right: 3pt;
     text-align: right;
   }
-  
 }
-
 
 .page-inner .force-colbreak,
 .print-inner .force-colbreak {
@@ -531,14 +530,47 @@ body {
   padding: 0;
 }
 
-.page-inner .force-colbreak + :is(h1,h2,h3,h4,h5,h6,p,ul,ol,blockquote,div,section,figure,img) {
+.page-inner
+  .force-colbreak
+  + :is(
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6,
+    p,
+    ul,
+    ol,
+    blockquote,
+    div,
+    section,
+    figure,
+    img
+  ) {
   margin-top: 0 !important;
 }
 
-.print-inner .force-colbreak + :is(h1,h2,h3,h4,h5,h6,p,ul,ol,blockquote,div,section,figure,img) {
+.print-inner
+  .force-colbreak
+  + :is(
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6,
+    p,
+    ul,
+    ol,
+    blockquote,
+    div,
+    section,
+    figure,
+    img
+  ) {
   margin-top: 0 !important;
 }
-
 
 ::selection {
   background-color: var(--accent);
