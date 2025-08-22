@@ -136,7 +136,8 @@ body {
   color: var(--ink);
   border: none;
   outline: none;
-  font: 13px/1.5 ui-monospace, monospace;
+  font-size: 13px;
+  font-family: ui-monospace, Courier, monospace;
   tab-size: 2;
 }
 
@@ -383,10 +384,19 @@ body {
 }
 
 .print-running-header {
-  top: 4mm;
+  top: 1mm;
 }
 .print-running-footer {
   bottom: 4mm;
+}
+
+.page-running-header,
+.page-running-footer,
+.page-number,
+.print-page-number,
+.print-running-header,
+.print-running-footer {
+  font-family: inherit !important; /* inherit from page-inner */
 }
 
 .page {

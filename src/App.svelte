@@ -69,7 +69,14 @@
     text-align:${justify === "justify" ? "justify" : "left"};
     hyphens:${hyphens};
   `;
-  $: page_style = `width:${page_px.w}px;height:${page_px.h}px;--margin-bottom:${margins.bottom}`;
+
+  $: page_style = `
+  width:${page_px.w}px;
+  height:${page_px.h}px;
+  --margin-bottom:${margins.bottom};
+  font-family:${font_family};
+  `;
+  
   $: inner_style = `
     padding:${pad.top}px ${pad.right}px ${pad.bottom}px ${pad.left}px;
     --pad-top:${pad.top}px; --pad-right:${pad.right}px; --pad-bottom:${pad.bottom}px; --pad-left:${pad.left}px;
