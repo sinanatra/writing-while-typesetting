@@ -130,6 +130,7 @@ export function paginate(args) {
   const column_gap = args.column_gap ?? args.columnGap;
   if (!measurer_el || !page_px || !pad)
     return { pages: [], heads: [], foots: [] };
+
   measure_host = measurer_el;
 
   const page_height = page_px.h - (pad.top + pad.bottom);
@@ -142,6 +143,7 @@ export function paginate(args) {
   const nodes = Array.from(measurer_el.childNodes).filter(
     (n) => n.nodeType === 1
   );
+
   const pages = [];
   const heads = [];
   const foots = [];
@@ -203,6 +205,21 @@ export function paginate(args) {
       i++;
       continue;
     }
+    if (n.hasAttribute && n.hasAttribute("data-rowbreak")) {
+      const meas = measure_at_width(n, col_width);
+      const inc =
+        col_height === 0 ? meas.h : meas.h - Math.min(prev_mb, meas.mt);
+
+      if (inc <= page_height - col_height) {
+        push_now(n.outerHTML);
+        col_height += inc;
+        prev_mb = meas.mb;
+        i++;
+      } else {
+        next_col_or_page();
+      }
+      continue;
+    }
 
     if (["META", "LINK", "SCRIPT", "STYLE"].includes(n.tagName)) {
       i++;
@@ -210,19 +227,13 @@ export function paginate(args) {
     }
 
     const el = n;
+    const span_all = is_span_all(el);
 
-    if (is_span_all(el)) {
-      if (col_index !== 0 || col_height > 0) close_page();
-      push_now(el.outerHTML);
-      close_page();
-      i++;
-      continue;
-    }
-
-    const meas = measure_at_width(el, col_width);
+    const meas = measure_at_width(el, span_all ? inner_width : col_width);
     const inc = col_height === 0 ? meas.h : meas.h - Math.min(prev_mb, meas.mt);
+    const room = page_height - col_height;
 
-    if (inc <= page_height - col_height) {
+    if (inc <= room) {
       push_now(el.outerHTML);
       col_height += inc;
       prev_mb = meas.mb;
@@ -232,20 +243,19 @@ export function paginate(args) {
 
     if (meas.h <= page_height) {
       next_col_or_page();
+
       continue;
     }
 
-    const { head, tail } = split_element(
-      el,
-      col_width,
-      page_height - col_height
-    );
+    const target_width = span_all ? inner_width : col_width;
+    const { head, tail } = split_element(el, target_width, room);
     if (head) {
-      const head_meas = measure_at_width(head, col_width);
+      const head_meas = measure_at_width(head, target_width);
       const head_inc =
         col_height === 0
           ? head_meas.h
           : head_meas.h - Math.min(prev_mb, head_meas.mt);
+
       if (head_inc <= page_height - col_height) {
         push_now(head.outerHTML);
         col_height += head_inc;

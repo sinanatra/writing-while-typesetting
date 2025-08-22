@@ -19,6 +19,8 @@ export function preprocess_markdown(md) {
     const m_head = raw.match(/^\s*\[\[\s*head(?:er)?:\s*(.*?)\s*\]\]\s*$/i);
     const m_foot = raw.match(/^\s*\[\[\s*foot:\s*(.*?)\s*\]\]\s*$/i);
 
+    const m_row = raw.match(/^\s*\[\[\s*rowbreak(?::\s*([^\]]+))?\s*\]\]\s*$/i);
+
     if (m_head) {
       flush();
       out.push(
@@ -34,11 +36,24 @@ export function preprocess_markdown(md) {
       continue;
     }
 
+    if (m_row) {
+      flush();
+      let h = (m_row[1] || "").trim();
+
+      if (!h) h = "1em";
+
+      if (/^\d+(\.\d+)?$/.test(h)) h = `${h}em`;
+      out.push(
+        `<div data-rowbreak="1" class="force-rowbreak" style="height:${h}"></div>`
+      );
+      continue;
+    }
+
     if (is_break(raw)) {
       const t = raw.trim().toLowerCase();
       flush();
       if (t.includes("colbreak")) {
-        out.push('<div data-colbreak="1" class="col-break-marker"></div>');
+        out.push('<div data-colbreak="1" class="force-colbreak"></div>');
       } else {
         out.push('<div data-pagebreak="1" class="page-break-marker"></div>');
       }

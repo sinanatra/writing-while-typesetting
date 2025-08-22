@@ -76,7 +76,7 @@
   --margin-bottom:${margins.bottom};
   font-family:${font_family};
   `;
-  
+
   $: inner_style = `
     padding:${pad.top}px ${pad.right}px ${pad.bottom}px ${pad.left}px;
     --pad-top:${pad.top}px; --pad-right:${pad.right}px; --pad-bottom:${pad.bottom}px; --pad-left:${pad.left}px;
@@ -207,6 +207,7 @@
     });
   }
 
+  const insert_row_break = () => insert_at_cursor("\n\n[[rowbreak]]\n\n");
   const insert_page_break = () => insert_at_cursor("\n\n[[pagebreak]]\n\n");
   const insert_col_break = () => insert_at_cursor("\n\n[[colbreak]]\n\n");
   const insert_head = () => insert_at_cursor("\n\n[[head: Your Heading]]\n\n");
@@ -484,6 +485,7 @@
       <button on:click={() => wrap_selection_cols(i + 1)}>{i + 1} col</button>
     {/each}
     <button on:click={insert_col_break}>+ Col Break</button>
+    <button on:click={insert_row_break}>+ Row Break</button>
     <button on:click={insert_page_break}>+ Page Break</button>
 
     <button class="primary" on:click={print_pdf}>Print / PDF</button>
