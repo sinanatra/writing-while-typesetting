@@ -61,6 +61,7 @@ body {
 }
 .topbar .group {
   display: inline-flex;
+  flex-wrap: wrap;
   gap: var(--gap-m);
   align-items: center;
 }
