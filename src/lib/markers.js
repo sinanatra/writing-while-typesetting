@@ -49,23 +49,16 @@ export function preprocess_markdown(md) {
       continue;
     }
 
-    if (is_break(raw)) {
+   if (is_break(raw)) {
       const t = raw.trim().toLowerCase();
       flush();
       if (t.includes("colbreak")) {
-        out.push('<div data-colbreak="1" class="col-break-marker"></div>');
-      } else if (t.includes("rowbreak")) {
-        const m = raw.match(/\[\[\s*rowbreak\s*:?(\d+)?\s*\]\]/i);
-        let rows = parseInt(m?.[1] ?? "1", 10);
-        if (isNaN(rows)) rows = 1;
-        rows = Math.max(1, Math.min(rows, 20)); 
-        out.push(
-          `<div data-rowbreak="${rows}" class="force-rowbreak" style="height:${rows}em"></div>`
-        );
+        out.push('<div data-colbreak="1" class="force-colbreak"></div>');
       } else {
         out.push('<div data-pagebreak="1" class="page-break-marker"></div>');
       }
-      continue;
+    } else {
+      buf.push(raw);
     }
   }
   flush();
