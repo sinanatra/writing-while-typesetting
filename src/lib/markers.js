@@ -13,7 +13,7 @@ export function preprocess_markdown(md) {
   };
 
   const is_break = (s) =>
-    /^\s*(\[\[(pagebreak|colbreak)\]\]|``|<!--\s*newpage\s*-->)\s*$/i.test(s);
+    /^\s*\[\[(pagebreak|colbreak|rowbreak)(:[^]]+)?\]\]\s*$/i.test(s);
 
   for (const raw of lines) {
     const m_head = raw.match(/^\s*\[\[\s*head(?:er)?:\s*(.*?)\s*\]\]\s*$/i);
@@ -53,12 +53,19 @@ export function preprocess_markdown(md) {
       const t = raw.trim().toLowerCase();
       flush();
       if (t.includes("colbreak")) {
-        out.push('<div data-colbreak="1" class="force-colbreak"></div>');
+        out.push('<div data-colbreak="1" class="col-break-marker"></div>');
+      } else if (t.includes("rowbreak")) {
+        const m = raw.match(/\[\[\s*rowbreak\s*:?(\d+)?\s*\]\]/i);
+        let rows = parseInt(m?.[1] ?? "1", 10);
+        if (isNaN(rows)) rows = 1;
+        rows = Math.max(1, Math.min(rows, 20)); 
+        out.push(
+          `<div data-rowbreak="${rows}" class="force-rowbreak" style="height:${rows}em"></div>`
+        );
       } else {
         out.push('<div data-pagebreak="1" class="page-break-marker"></div>');
       }
-    } else {
-      buf.push(raw);
+      continue;
     }
   }
   flush();
