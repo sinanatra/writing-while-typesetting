@@ -517,7 +517,8 @@
     <button on:click={insert_col_break}>+ Col Break</button>
     <button on:click={insert_row_break}>+ Row Break</button>
     <button on:click={insert_page_break}>+ Page Break</button>
-
+  </div>
+  <div class="group right">
     <button
       on:click={() =>
         export_book({

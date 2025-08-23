@@ -113,7 +113,7 @@ body {
 .right {
   position: relative;
   padding: var(--pad-s);
-  padding-bottom: 46px;
+  /* padding-bottom: 46px; */
   overflow: hidden;
 }
 
