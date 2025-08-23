@@ -484,26 +484,6 @@
     </label>
   </div>
 
-  <div class="group">
-    <label
-      >Print
-      <select bind:value={print_mode}>
-        <option value="pages">Single pages</option>
-        <option value="spreads">Spreads (2-up)</option>
-      </select>
-    </label>
-    {#if print_mode === "spreads"}
-      <label
-        >Gutter <input
-          type="number"
-          min="0"
-          step="1"
-          bind:value={spread_gutter}
-        /> mm</label
-      >
-    {/if}
-  </div>
-
   <div class="group right">
     <button on:click={insert_head}>+ Head</button>
     <button on:click={insert_foot}>+ Foot</button>
@@ -550,7 +530,25 @@
     <button on:click={() => document.getElementById("import_book").click()}
       >Import</button
     >
-
+    <div class="group">
+      <label
+        >Print
+        <select bind:value={print_mode}>
+          <option value="pages">Single pages</option>
+          <option value="spreads">Spreads (2-up)</option>
+        </select>
+      </label>
+      {#if print_mode === "spreads"}
+        <label
+          >Gutter <input
+            type="number"
+            min="0"
+            step="1"
+            bind:value={spread_gutter}
+          /> mm</label
+        >
+      {/if}
+    </div>
     <button class="primary" on:click={print_pdf}>Print / PDF</button>
   </div>
 

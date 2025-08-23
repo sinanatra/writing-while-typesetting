@@ -294,9 +294,12 @@ body {
   line-height: calc(var(--margin-bottom, 20) * 1px * 1.5);
 }
 
-.preview :where(h1, h2, h3, h4) {
+.preview :where(h1, h2, h3, h4),
+h1,
+h2,
+h3,
+h4 {
   margin: 0 0 0.5ch 0;
-
   font-weight: 400;
   break-after: avoid;
 }
@@ -331,6 +334,15 @@ body {
 }
 .preview div:not(.force-colbreak) {
   margin-bottom: 1ch;
+}
+
+.force-pagebreak {
+  break-before: page;
+  -webkit-break-before: page;
+  page-break-before: always;
+  height: 0;
+  margin: 0;
+  padding: 0;
 }
 
 .full,
@@ -392,6 +404,7 @@ body {
   padding: 0 !important;
   column-count: 1 !important;
   column-gap: 0 !important;
+  overflow: visible; /* evita clipping rari */
 }
 .page-inner.fullpage .img-page {
   display: block !important;
@@ -416,6 +429,38 @@ body {
   z-index: 1;
 }
 
+.tinted {
+  position: relative;
+  display: inline-block;
+  overflow: hidden;
+  line-height: 0;
+  font-size: 0;
+  background-color: white;
+}
+
+.tinted > img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.tint-overlay {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  pointer-events: none;
+  background: var(--tint, #ff0033);
+  mix-blend-mode: screen;
+}
+
+@page {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
 @page {
   margin: 0 !important;
   padding: 0 !important;
@@ -428,6 +473,7 @@ body {
     padding: 0 !important;
   }
 
+  /* Mostra solo l'albero di stampa */
   .topbar,
   .workspace .left,
   .workspace .splitter,
@@ -447,6 +493,7 @@ body {
   #print-root {
     display: block !important;
   }
+
   #print-root .print-sheet {
     display: flex !important;
     align-items: stretch;
@@ -454,15 +501,125 @@ body {
     margin: 0 auto !important;
     position: relative;
   }
+
   #print-root .print-page {
     position: relative;
+    background: #fff !important;
     box-shadow: none !important;
     margin: 0 !important;
-    overflow: visible !important;
+    overflow: hidden !important;
   }
+
   #print-root .print-inner {
     position: relative;
     z-index: 1;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  #print-root .print-inner img {
+    display: block !important;
+    max-width: 100% !important;
+    height: auto !important;
+  }
+
+  .tinted,
+  .tinted img,
+  .tint-overlay,
+  .print-page,
+  .print-inner,
+  .img-page {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  #print-root .print-inner.fullpage {
+    padding: 0 !important;
+    column-count: 1 !important;
+    column-gap: 0 !important;
+  }
+  #print-root .print-inner.fullpage .img-page {
+    display: block !important;
+    width: 100% !important;
+    height: 100% !important;
+    margin: 0 !important;
+    object-fit: cover !important;
+    break-inside: avoid !important;
+  }
+
+  #print-root .print-inner:not(.fullpage) .img-page {
+    display: block !important;
+    width: calc(100% + var(--pad-left) + var(--pad-right)) !important;
+    height: calc(100% + var(--pad-top) + var(--pad-bottom)) !important;
+    margin-left: calc(-1 * var(--pad-left)) !important;
+    margin-top: calc(-1 * var(--pad-top)) !important;
+    object-fit: cover !important;
+    column-span: all !important;
+    break-inside: avoid !important;
+  }
+
+  .print-running-header,
+  .print-running-footer,
+  .print-page-number {
+    position: absolute;
+    left: 0;
+    right: 0;
+    color: var(--run-color);
+    font-size: var(--run-font-size);
+    line-height: 1;
+    text-align: center;
+    pointer-events: none;
+    font-family: inherit !important;
+  }
+  .print-running-header {
+    top: 1mm;
+  }
+  .print-running-footer {
+    bottom: 1mm;
+  }
+
+  .print-page-number {
+    bottom: var(--page-num-offset);
+  }
+  .print-page-number.lef {
+    left: var(--page-num-offset);
+    right: auto;
+    text-align: left;
+  }
+  .print-page-number.rig {
+    right: var(--page-num-offset);
+    left: auto;
+    text-align: right;
+  }
+
+  :is(.print-inner) .force-colbreak {
+    break-before: column;
+    -webkit-column-break-before: always;
+    column-break-before: always;
+    height: 0;
+    margin: 0;
+    padding: 0;
+  }
+  :is(.print-inner)
+    .force-colbreak
+    + :is(
+      h1,
+      h2,
+      h3,
+      h4,
+      h5,
+      h6,
+      p,
+      ul,
+      ol,
+      blockquote,
+      div,
+      section,
+      figure,
+      img
+    ) {
+    margin-top: 0 !important;
   }
 }
 
