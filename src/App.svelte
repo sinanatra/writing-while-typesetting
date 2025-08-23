@@ -256,7 +256,8 @@
     });
   }
 
-  const insert_row_break = () => insert_at_cursor("\n\n[[rowbreak]]\n\n");
+  const insert_row_break = () => insert_at_cursor("\n\n[[rowbreak:1]]\n\n");
+
   const insert_page_break = () => insert_at_cursor("\n\n[[pagebreak]]\n\n");
   const insert_col_break = () => insert_at_cursor("\n\n[[colbreak]]\n\n");
   const insert_head = () => insert_at_cursor("\n\n[[head: Your Heading]]\n\n");

@@ -297,7 +297,7 @@ body {
 
 .preview :where(h1, h2, h3, h4) {
   margin: 0 0 .5ch 0;
-  
+
   font-weight: 400;
   break-after: avoid;
 }
