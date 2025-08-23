@@ -5,6 +5,7 @@
   import { preprocess_markdown } from "./lib/markers";
   import { paginate } from "./lib/paginate";
   import { inject_print_css } from "./lib/print_css";
+  import { export_book, import_book_from_file } from "./lib/save_import.js";
   import {
     save_image_to_idb,
     hydrate_html,
@@ -32,6 +33,17 @@
   let hyphens = localStorage.getItem("zine:hyphens") ?? "auto";
   let print_mode = localStorage.getItem("zine:print_mode") ?? "pages";
   let spread_gutter = Number(localStorage.getItem("zine:spread_gutter") ?? 6);
+  let preview_zoom = Number(localStorage.getItem("zine:zoom") ?? 100);
+  $: localStorage.setItem("zine:zoom", String(preview_zoom));
+
+  let hydrated_html = "";
+  let pages = [];
+  let sheets = [];
+  let measurer_el;
+  let storage_text = "";
+  let run_heads = [];
+  let run_foots = [];
+  $: zoom_scale = Math.max(10, Math.min(400, preview_zoom)) / 100;
 
   $: localStorage.setItem("zine:title", title);
   $: localStorage.setItem("zine:page_size", page_size);
@@ -90,13 +102,31 @@
   `;
 
   $: full_content_html = preprocess_markdown(markdown);
-  let hydrated_html = "";
-  let pages = [];
-  let sheets = [];
-  let measurer_el;
-  let storage_text = "";
-  let run_heads = [];
-  let run_foots = [];
+
+  function on_import_book(e) {
+    const file = e.target?.files?.[0];
+    if (file)
+      import_book_from_file(
+        file,
+        {
+          title: (v) => (title = v ?? title),
+          page_size: (v) => (page_size = v ?? page_size),
+          margins: (v) => (margins = v ?? margins),
+          markdown: (v) => (markdown = v ?? markdown),
+          columns: (v) => (columns = v ?? columns),
+          column_gap: (v) => (column_gap = v ?? column_gap),
+          font_family: (v) => (font_family = v ?? font_family),
+          base_font_pt: (v) => (base_font_pt = v ?? base_font_pt),
+          line_height: (v) => (line_height = v ?? line_height),
+          justify: (v) => (justify = v ?? justify),
+          hyphens: (v) => (hyphens = v ?? hyphens),
+          print_mode: (v) => (print_mode = v ?? print_mode),
+          spread_gutter: (v) => (spread_gutter = v ?? spread_gutter),
+          left_percent: (v) => (left_percent = v ?? left_percent),
+        },
+        rerender
+      );
+  }
 
   async function refresh_storage_text() {
     const usage = await current_usage_mb();
@@ -488,7 +518,45 @@
     <button on:click={insert_row_break}>+ Row Break</button>
     <button on:click={insert_page_break}>+ Page Break</button>
 
+    <button
+      on:click={() =>
+        export_book({
+          title,
+          page_size,
+          margins,
+          markdown,
+          columns,
+          column_gap,
+          font_family,
+          base_font_pt,
+          line_height,
+          justify,
+          hyphens,
+          print_mode,
+          spread_gutter,
+          left_percent,
+        })}>Save</button
+    >
+
+    <input
+      id="import_book"
+      type="file"
+      accept="application/json"
+      style="display:none"
+      on:change={on_import_book}
+    />
+    <button on:click={() => document.getElementById("import_book").click()}>
+      Import
+    </button>
+
     <button class="primary" on:click={print_pdf}>Print / PDF</button>
+  </div>
+
+  <div class="zoombar">
+    <input type="range" min="25" max="200" step="5" bind:value={preview_zoom} />
+
+    <button type="button" on:click={() => (preview_zoom = 100)}>100%</button>
+    <span class="zoomval">{Math.round(preview_zoom)}%</span>
   </div>
 </div>
 
@@ -522,24 +590,30 @@
     <div id="measurer" bind:this={measurer_el} style={measurer_style}>
       {@html hydrated_html}
     </div>
-
-    <div class="spreads">
-      {#each pages as page_html, i}
-        <div class="page" style={page_style}>
-          <div class="page-running-header">{run_heads[i] || ""}</div>
-          <div
-            class="page-inner preview"
-            style={inner_style}
-            class:fullpage={page_html.includes("img-page")}
-          >
-            {@html page_html}
-          </div>
-          <div class="page-running-footer">{run_foots[i] || ""}</div>
-          <div class="page-number {i % 2 === 0 ? 'rig' : 'lef'}">
-            {i + 1}
-          </div>
+    <div class="spreads-viewport">
+      <div
+        class="spreads-scale"
+        style={`transform:scale(${zoom_scale}); transform-origin: top left;`}
+      >
+        <div class="spreads">
+          {#each pages as page_html, i}
+            <div class="page" style={page_style}>
+              <div class="page-running-header">{run_heads[i] || ""}</div>
+              <div
+                class="page-inner preview"
+                style={inner_style}
+                class:fullpage={page_html.includes("img-page")}
+              >
+                {@html page_html}
+              </div>
+              <div class="page-running-footer">{run_foots[i] || ""}</div>
+              <div class="page-number {i % 2 === 0 ? 'rig' : 'lef'}">
+                {i + 1}
+              </div>
+            </div>
+          {/each}
         </div>
-      {/each}
+      </div>
     </div>
 
     <div id="print-root" aria-hidden="true" style="display:none">
