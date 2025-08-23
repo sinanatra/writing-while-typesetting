@@ -1,4 +1,8 @@
 import { tick } from "svelte";
+import {
+  export_images_for_markdown,
+  import_images_from_map,
+} from "./images.js";
 
 export function slugify(s = "") {
   return (
@@ -27,19 +31,29 @@ export function download_json(filename, obj) {
 export function snapshot_state(state) {
   return {
     __type: "zine-book",
-    __version: 1,
+    __version: 2,
     savedAt: new Date().toISOString(),
     ...state,
   };
 }
 
+export async function export_book(state) {
+  const assets = await export_images_for_markdown(state.markdown);
+
+  const data = snapshot_state({
+    ...state,
+    assets,
+  });
+
+  download_json(`${slugify(state.title)}.zine.json`, data);
+}
+
 export function apply_state(s, setters) {
-  if (!s || (s.__type && s.__type !== "zine-book")) return;
+  if (!s) return;
 
   setters.title(s.title);
   setters.page_size(s.page_size);
   setters.margins(s.margins);
-  setters.markdown(s.markdown);
   setters.columns(Number(s.columns));
   setters.column_gap(Number(s.column_gap));
   setters.font_family(s.font_family);
@@ -49,15 +63,11 @@ export function apply_state(s, setters) {
   setters.hyphens(s.hyphens);
   setters.print_mode(s.print_mode);
   setters.spread_gutter(Number(s.spread_gutter));
-
   if (typeof s.left_percent === "number") {
     setters.left_percent(Math.max(20, Math.min(80, s.left_percent)));
   }
-}
 
-export function export_book(state) {
-  const data = snapshot_state(state);
-  download_json(`${slugify(state.title)}.zine.json`, data);
+  setters.markdown(s.markdown);
 }
 
 export async function import_book_from_file(file, setters, rerender) {
@@ -65,8 +75,11 @@ export async function import_book_from_file(file, setters, rerender) {
     const txt = await file.text();
     const parsed = JSON.parse(txt);
 
-    const s = parsed && parsed.__type === "zine-book" ? parsed : parsed;
-    apply_state(s, setters);
+    if (parsed.assets) {
+      await import_images_from_map(parsed.assets);
+    }
+
+    apply_state(parsed, setters);
 
     await tick();
     await rerender();

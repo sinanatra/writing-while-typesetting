@@ -18,6 +18,9 @@ export const hydrate_concurrency = 2;
 export const downscale_max_w_default = 1600;
 export const jpeg_quality = 0.85;
 
+const DB_NAME = "zine-images";
+const STORE_NAME = "images";
+
 export function new_key() {
   return `${Date.now()}-${crypto.randomUUID()}`;
 }
@@ -169,4 +172,111 @@ export async function hydrate_html(html) {
   );
   await Promise.all(workers);
   return container.innerHTML;
+}
+
+async function open_images_db() {
+  return await new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, 1);
+    req.onupgradeneeded = () => {
+      const db = req.result;
+      if (!db.objectStoreNames.contains(STORE_NAME)) {
+        db.createObjectStore(STORE_NAME);
+      }
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+export async function read_image_blob(key) {
+  const db = await open_images_db();
+  return await new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, "readonly");
+    const st = tx.objectStore(STORE_NAME);
+    const get = st.get(key);
+    get.onsuccess = () => {
+      const val = get.result;
+      if (!val) return resolve(null);
+      if (val instanceof Blob)
+        return resolve({ blob: val, name: key, type: val.type || "image/*" });
+      if (val && val.blob)
+        return resolve({
+          blob: val.blob,
+          name: val.name || key,
+          type: val.type || val.blob?.type || "image/*",
+        });
+      resolve(null);
+    };
+    get.onerror = () => reject(get.error);
+  });
+}
+
+export async function write_image_blob(
+  key,
+  blob,
+  name = key,
+  type = blob?.type || "image/*"
+) {
+  const db = await open_images_db();
+  const payload = { blob, name, type };
+  return await new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, "readwrite");
+    const st = tx.objectStore(STORE_NAME);
+    const put = st.put(payload, key);
+    put.onsuccess = () => resolve(true);
+    put.onerror = () => reject(put.error);
+  });
+}
+
+export function extract_appimg_keys(text = "") {
+  const keys = new Set();
+  const re = /appimg:\/\/([A-Za-z0-9._\-:/]+)/g;
+  let m;
+  while ((m = re.exec(String(text)))) {
+    keys.add(m[1]);
+  }
+  return Array.from(keys);
+}
+
+export function blob_to_base64(blob) {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => {
+      const res = String(r.result || "");
+      const idx = res.indexOf("base64,");
+      resolve(idx >= 0 ? res.slice(idx + 7) : res);
+    };
+    r.onerror = reject;
+    r.readAsDataURL(blob);
+  });
+}
+
+export async function export_images_for_markdown(markdown) {
+  const map = {};
+  const keys = extract_appimg_keys(markdown);
+  for (const key of keys) {
+    const blob = await idb_get(key);
+    if (!blob) continue;
+    const b64 = await blob_to_base64(blob);
+    map[key] = {
+      name: key,
+      type: blob.type || "image/*",
+      base64: b64,
+    };
+  }
+  return map;
+}
+
+export async function import_images_from_map(assets = {}) {
+  const entries = Object.entries(assets);
+  for (const [key, meta] of entries) {
+    const b64 = meta?.base64;
+    if (!b64) continue;
+    const mime = meta?.type || "image/*";
+    const bin = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+    const blob = new Blob([bin], { type: mime });
+
+    await idb_set(key, blob);
+    await idb_meta_set(key, { size: blob.size, last: Date.now() });
+  }
 }

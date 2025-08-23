@@ -105,27 +105,46 @@
 
   function on_import_book(e) {
     const file = e.target?.files?.[0];
-    if (file)
-      import_book_from_file(
-        file,
-        {
-          title: (v) => (title = v ?? title),
-          page_size: (v) => (page_size = v ?? page_size),
-          margins: (v) => (margins = v ?? margins),
-          markdown: (v) => (markdown = v ?? markdown),
-          columns: (v) => (columns = v ?? columns),
-          column_gap: (v) => (column_gap = v ?? column_gap),
-          font_family: (v) => (font_family = v ?? font_family),
-          base_font_pt: (v) => (base_font_pt = v ?? base_font_pt),
-          line_height: (v) => (line_height = v ?? line_height),
-          justify: (v) => (justify = v ?? justify),
-          hyphens: (v) => (hyphens = v ?? hyphens),
-          print_mode: (v) => (print_mode = v ?? print_mode),
-          spread_gutter: (v) => (spread_gutter = v ?? spread_gutter),
-          left_percent: (v) => (left_percent = v ?? left_percent),
-        },
-        rerender
-      );
+    if (!file) return;
+    import_book_from_file(
+      file,
+      {
+        title: (v) => (title = v ?? title),
+        page_size: (v) => (page_size = v ?? page_size),
+        margins: (v) => (margins = v ?? margins),
+        markdown: (v) => (markdown = v ?? markdown),
+        columns: (v) => (columns = v ?? columns),
+        column_gap: (v) => (column_gap = v ?? column_gap),
+        font_family: (v) => (font_family = v ?? font_family),
+        base_font_pt: (v) => (base_font_pt = v ?? base_font_pt),
+        line_height: (v) => (line_height = v ?? line_height),
+        justify: (v) => (justify = v ?? justify),
+        hyphens: (v) => (hyphens = v ?? hyphens),
+        print_mode: (v) => (print_mode = v ?? print_mode),
+        spread_gutter: (v) => (spread_gutter = v ?? spread_gutter),
+        left_percent: (v) => (left_percent = v ?? left_percent),
+      },
+      rerender
+    );
+  }
+
+  function on_export_book() {
+    export_book({
+      title,
+      page_size,
+      margins,
+      markdown,
+      columns,
+      column_gap,
+      font_family,
+      base_font_pt,
+      line_height,
+      justify,
+      hyphens,
+      print_mode,
+      spread_gutter,
+      left_percent,
+    });
   }
 
   async function refresh_storage_text() {
@@ -519,26 +538,7 @@
     <button on:click={insert_page_break}>+ Page Break</button>
   </div>
   <div class="group right">
-    <button
-      on:click={() =>
-        export_book({
-          title,
-          page_size,
-          margins,
-          markdown,
-          columns,
-          column_gap,
-          font_family,
-          base_font_pt,
-          line_height,
-          justify,
-          hyphens,
-          print_mode,
-          spread_gutter,
-          left_percent,
-        })}>Save</button
-    >
-
+    <button on:click={on_export_book}>Save</button>
     <input
       id="import_book"
       type="file"
@@ -546,9 +546,9 @@
       style="display:none"
       on:change={on_import_book}
     />
-    <button on:click={() => document.getElementById("import_book").click()}>
-      Import
-    </button>
+    <button on:click={() => document.getElementById("import_book").click()}
+      >Import</button
+    >
 
     <button class="primary" on:click={print_pdf}>Print / PDF</button>
   </div>
