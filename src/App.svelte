@@ -34,8 +34,12 @@
   let print_mode = localStorage.getItem("zine:print_mode") ?? "pages";
   let spread_gutter = Number(localStorage.getItem("zine:spread_gutter") ?? 6);
   let preview_zoom = Number(localStorage.getItem("zine:zoom") ?? 100);
-  $: localStorage.setItem("zine:zoom", String(preview_zoom));
+  let arrangement = localStorage.getItem("zine:arrangement") ?? "sequential";
 
+  $: localStorage.setItem("zine:zoom", String(preview_zoom));
+  $: localStorage.setItem("zine:arrangement", arrangement);
+
+  let sheet_idxs = [];
   let hydrated_html = "";
   let pages = [];
   let sheets = [];
@@ -128,6 +132,46 @@
     );
   }
 
+  function pairSequentialIdxs(n) {
+    const idxs = [];
+    if (n <= 0) return idxs;
+
+    idxs.push([null, 0]);
+
+    for (let i = 1; i < n; i += 2) {
+      idxs.push([i, i + 1 < n ? i + 1 : null]);
+    }
+    return idxs;
+  }
+
+  function imposeBookletIdxs(n) {
+    const m = n + ((4 - (n % 4)) % 4);
+    const idxs = [];
+    let L = 0,
+      R = m - 1;
+    while (L < R) {
+      idxs.push([R < n ? R : null, L < n ? L : null]);
+      idxs.push([L + 1 < n ? L + 1 : null, R - 1 < n ? R - 1 : null]);
+      L += 2;
+      R -= 2;
+    }
+    return idxs;
+  }
+
+  function buildSheetsFrom(pagesArr, mode) {
+    const idxs =
+      mode === "booklet"
+        ? imposeBookletIdxs(pagesArr.length)
+        : pairSequentialIdxs(pagesArr.length);
+
+    const pairs = idxs.map(([li, ri]) => [
+      li != null ? pagesArr[li] : "",
+      ri != null ? pagesArr[ri] : "",
+    ]);
+
+    return { pairs, idxs };
+  }
+
   function on_export_book() {
     export_book({
       title,
@@ -172,13 +216,12 @@
       run_heads = res.heads;
       run_foots = res.foots;
 
-      const out = [];
-      if (pages.length) {
-        out.push([null, pages[0]]);
-        for (let i = 1; i < pages.length; i += 2)
-          out.push([pages[i] ?? null, pages[i + 1] ?? null]);
-      }
-      sheets = out;
+      const built = buildSheetsFrom(
+        pages,
+        print_mode === "spreads" ? arrangement : "sequential"
+      );
+      sheets = built.pairs;
+      sheet_idxs = built.idxs;
       inject_print_css(
         size,
         margins,
@@ -212,6 +255,7 @@
     print_mode,
     spread_gutter,
     size.id,
+    arrangement,
     rerender();
 
   function insert_at_cursor(snippet) {
@@ -547,6 +591,13 @@
             bind:value={spread_gutter}
           /> mm</label
         >
+        <label>
+          Order
+          <select bind:value={arrangement}>
+            <option value="sequential">Editorial (1–2, 3–4…)</option>
+            <option value="booklet">Booklet (printer spreads)</option>
+          </select>
+        </label>
       {/if}
     </div>
     <button class="primary" on:click={print_pdf}>Print / PDF</button>
@@ -638,36 +689,50 @@
           <div class="print-sheet">
             <div class="print-page">
               <div class="print-running-header">
-                {sidx === 0 ? "" : run_heads[2 * sidx - 1] || ""}
+                {#if sheet_idxs[sidx][0] != null}{run_heads[
+                    sheet_idxs[sidx][0]
+                  ] || ""}{/if}
               </div>
               <div
                 class="print-inner"
                 class:fullpage={(pair[0] || "").includes("img-page")}
+                style={inner_style}
               >
                 {@html pair[0] || ""}
               </div>
               <div class="print-running-footer">
-                {sidx === 0 ? "" : run_foots[2 * sidx - 1] || ""}
+                {#if sheet_idxs[sidx][0] != null}{run_foots[
+                    sheet_idxs[sidx][0]
+                  ] || ""}{/if}
               </div>
-              <div class="print-page-number lef">{2 * sidx + 1}</div>
+              <div class="print-page-number lef">
+                {#if sheet_idxs[sidx][0] != null}{sheet_idxs[sidx][0] + 1}{/if}
+              </div>
             </div>
 
             <div class="print-gutter"></div>
 
             <div class="print-page">
               <div class="print-running-header">
-                {run_heads[2 * sidx] || (sidx === 0 ? run_heads[0] || "" : "")}
+                {#if sheet_idxs[sidx][1] != null}{run_heads[
+                    sheet_idxs[sidx][1]
+                  ] || ""}{/if}
               </div>
               <div
                 class="print-inner"
                 class:fullpage={(pair[1] || "").includes("img-page")}
+                style={inner_style}
               >
                 {@html pair[1] || ""}
               </div>
               <div class="print-running-footer">
-                {run_foots[2 * sidx] || (sidx === 0 ? run_foots[0] || "" : "")}
+                {#if sheet_idxs[sidx][1] != null}{run_foots[
+                    sheet_idxs[sidx][1]
+                  ] || ""}{/if}
               </div>
-              <div class="print-page-number rig">{2 * sidx + 2}</div>
+              <div class="print-page-number rig">
+                {#if sheet_idxs[sidx][1] != null}{sheet_idxs[sidx][1] + 1}{/if}
+              </div>
             </div>
           </div>
         {/each}
