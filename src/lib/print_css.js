@@ -45,20 +45,6 @@ export function inject_print_css(
       justify === "justify" ? "justify" : "left"
     }; hyphens: ${hyphens};
   }
-  #print-root .print-inner > :first-child { margin-top: 0 !important; }
-  #print-root .print-inner :where(h1,h2,h3,h4,h5,h6,p,ul,ol,blockquote):first-child { margin-top: 0 !important; }
-  #print-root .print-inner img:first-child { margin-top: 0 !important; }
-  #print-root .print-inner .img-page {
-    display:block;
-    width: calc(100% + var(--pad-left) + var(--pad-right));
-    height: calc(100% + var(--pad-top) + var(--pad-bottom));
-    margin-left: calc(-1 * var(--pad-left));
-    margin-top: calc(-1 * var(--pad-top));
-    object-fit: cover;
-    break-inside: avoid;
-    column-span: all;
-    padding: 0 !important;
-  }
 }
 `;
   let style = document.getElementById("print-rules");

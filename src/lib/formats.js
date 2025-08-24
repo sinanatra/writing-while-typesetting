@@ -37,29 +37,3 @@ export const page_sizes = {
 };
 
 export const px_per_mm = 96 / 25.4;
-
-export function build_print_css({ sizeId }) {
-  const s = page_sizes[sizeId] ?? page_sizes.A7;
-  const mm = (n) => `${n}mm`;
-
-  return `
-@media print {
-  @page { size: ${mm(s.w)} ${mm(s.h)}; margin: 0; }
-
-  html, body { margin: 0; padding: 0; height: auto; }
-  body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-
-  .topbar, .workspace .left, .workspace .splitter, .spreads { display: none !important; }
-  #print-root { display: block !important; }
-
-  #print-root .print-page {
-    width: ${mm(s.w)} !important;
-    height: ${mm(s.h)} !important;
-    page-break-after: always;
-    box-shadow: none !important;
-    background: white;
-  }
-  #print-root .print-page:last-child { page-break-after: auto; }
-}
-`;
-}
