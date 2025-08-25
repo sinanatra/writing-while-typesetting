@@ -1,5 +1,13 @@
 <script>
   import { onMount, onDestroy, tick } from "svelte";
+  import TopbarLayout from "./components/TopbarLayout.svelte";
+  import TopbarTypography from "./components/TopbarTypography.svelte";
+  import TopbarIO from "./components/TopbarIO.svelte";
+  import MarkdownEditor from "./components/MarkdownEditor.svelte";
+  import SpreadsPreview from "./components/SpreadsPreview.svelte";
+  import PrintRoot from "./components/PrintRoot.svelte";
+  import Splitter from "./components/Splitter.svelte";
+
   import { revoke_all_blob_urls } from "./lib/images";
   import { page_sizes, px_per_mm } from "./lib/formats";
   import { preprocess_markdown } from "./lib/markers";
@@ -34,20 +42,7 @@
   let print_mode = localStorage.getItem("zine:print_mode") ?? "pages";
   let spread_gutter = Number(localStorage.getItem("zine:spread_gutter") ?? 6);
   let preview_zoom = Number(localStorage.getItem("zine:zoom") ?? 100);
-  let arrangement = localStorage.getItem("zine:arrangement") ?? "sequential";
-
-  $: localStorage.setItem("zine:zoom", String(preview_zoom));
-  $: localStorage.setItem("zine:arrangement", arrangement);
-
-  let sheet_idxs = [];
-  let hydrated_html = "";
-  let pages = [];
-  let sheets = [];
-  let measurer_el;
-  let storage_text = "";
-  let run_heads = [];
-  let run_foots = [];
-  $: zoom_scale = Math.max(10, Math.min(400, preview_zoom)) / 100;
+  let arrangement = localStorage.getItem("zine:arrangement") ?? "booklet";
 
   $: localStorage.setItem("zine:title", title);
   $: localStorage.setItem("zine:page_size", page_size);
@@ -62,6 +57,18 @@
   $: localStorage.setItem("zine:hyphens", hyphens);
   $: localStorage.setItem("zine:print_mode", print_mode);
   $: localStorage.setItem("zine:spread_gutter", String(spread_gutter));
+  $: localStorage.setItem("zine:zoom", String(preview_zoom));
+  $: localStorage.setItem("zine:arrangement", arrangement);
+
+  let sheet_idxs = [];
+  let hydrated_html = "";
+  let pages = [];
+  let sheets = [];
+  let measurer_el;
+  let storage_text = "";
+  let run_heads = [];
+  let run_foots = [];
+  $: zoom_scale = Math.max(10, Math.min(400, preview_zoom)) / 100;
 
   $: size = page_sizes[page_size] ?? page_sizes.A7;
   $: page_px = {
@@ -87,10 +94,10 @@
   `;
 
   $: page_style = `
-  width:${page_px.w}px;
-  height:${page_px.h}px;
-  --margin-bottom:${margins.bottom};
-  font-family:${font_family};
+    width:${page_px.w}px;
+    height:${page_px.h}px;
+    --margin-bottom:${margins.bottom};
+    font-family:${font_family};
   `;
 
   $: inner_style = `
@@ -135,9 +142,7 @@
   function pairSequentialIdxs(n) {
     const idxs = [];
     if (n <= 0) return idxs;
-
     idxs.push([null, 0]);
-
     for (let i = 1; i < n; i += 2) {
       idxs.push([i, i + 1 < n ? i + 1 : null]);
     }
@@ -222,6 +227,7 @@
       );
       sheets = built.pairs;
       sheet_idxs = built.idxs;
+
       inject_print_css(
         size,
         margins,
@@ -301,7 +307,6 @@
   }
 
   const insert_row_break = () => insert_at_cursor("\n\n[[rowbreak:1]]\n\n");
-
   const insert_page_break = () => insert_at_cursor("\n\n[[pagebreak]]\n\n");
   const insert_col_break = () => insert_at_cursor("\n\n[[colbreak]]\n\n");
   const insert_head = () => insert_at_cursor("\n\n[[head: Your Heading]]\n\n");
@@ -443,300 +448,81 @@
   const make_larger = () => apply_font_scale(+0.1);
 </script>
 
+<TopbarLayout
+  bind:title
+  {page_sizes}
+  bind:page_size
+  bind:margins
+  bind:columns
+  bind:column_gap
+/>
 <div class="topbar">
-  <div class="group">
-    <label
-      >PDF Title
-      <input type="text" bind:value={title} placeholder="Title…" />
-    </label>
-    <label
-      >Size
-      <select bind:value={page_size}>
-        {#each Object.values(page_sizes) as s}
-          <option value={s.id}>{s.label}</option>
-        {/each}
-      </select>
-    </label>
-    <button
-      on:click={() => {
-        margins = { ...page_sizes[page_size].margins };
-      }}
-    >
-      Reset margins
-    </button>
-  </div>
+  <TopbarTypography
+    bind:font_family
+    bind:base_font_pt
+    bind:line_height
+    bind:justify
+    bind:hyphens
+    {make_smaller}
+    {make_larger}
+  />
 
-  <div class="group">
-    <label
-      >T <input type="number" min="0" step="1" bind:value={margins.top} /> mm</label
-    >
-    <label
-      >R <input type="number" min="0" step="1" bind:value={margins.right} /> mm</label
-    >
-    <label
-      >B <input type="number" min="0" step="1" bind:value={margins.bottom} /> mm</label
-    >
-    <label
-      >L <input type="number" min="0" step="1" bind:value={margins.left} /> mm</label
-    >
-  </div>
-
-  <div class="group">
-    <label
-      >Cols <input type="number" min="1" step="1" bind:value={columns} /></label
-    >
-    <label
-      >Gap <input type="number" min="0" step="1" bind:value={column_gap} /> mm</label
-    >
-  </div>
-
-  <div class="group">
-    <label
-      >Font
-      <select bind:value={font_family}>
-        <option value="Georgia, Times New Roman, serif">Serif</option>
-        <option value="Helvetica, Arial, sans-serif">Sans</option>
-        <option value="Courier, monospace">Mono</option>
-      </select>
-    </label>
-    <label
-      >Size <input type="number" min="3" step="0.5" bind:value={base_font_pt} />
-      pt</label
-    >
-    <label
-      >LH <input
-        type="number"
-        min="0.5"
-        step="0.1"
-        bind:value={line_height}
-      /></label
-    >
-    <button on:click={make_smaller}>A−</button>
-    <button on:click={make_larger}>A+</button>
-
-    <label>
-      <select bind:value={justify}>
-        <option value="left">Ragged</option>
-        <option value="justify">Justify</option>
-      </select>
-    </label>
-    <label>
-      <select bind:value={hyphens}>
-        <option value="none">No hyphens</option>
-        <option value="auto">Hyphens auto</option>
-      </select>
-    </label>
-  </div>
-
-  <div class="group right">
-    <button on:click={insert_head}>+ Head</button>
-    <button on:click={insert_foot}>+ Foot</button>
-
-    <input
-      type="file"
-      id="image_input"
-      accept="image/*"
-      multiple
-      style="display:none"
-      on:change={(e) => on_image_input(e, false)}
-    />
-    <input
-      type="file"
-      id="image_input_full"
-      accept="image/*"
-      multiple
-      style="display:none"
-      on:change={(e) => on_image_input(e, true)}
-    />
-    <button on:click={() => document.getElementById("image_input").click()}
-      >+ Image</button
-    >
-    <button on:click={() => document.getElementById("image_input_full").click()}
-      >+ Full Image</button
-    >
-    <button on:click={() => wrap_selection_as("span-all")}>Span all</button>
-    {#each Array(columns) as _, i}
-      <button on:click={() => wrap_selection_cols(i + 1)}>{i + 1} col</button>
-    {/each}
-    <button on:click={insert_col_break}>+ Col Break</button>
-    <button on:click={insert_row_break}>+ Row Break</button>
-    <button on:click={insert_page_break}>+ Page Break</button>
-  </div>
-  <div class="group right">
-    <button on:click={on_export_book}>Save</button>
-    <input
-      id="import_book"
-      type="file"
-      accept="application/json"
-      style="display:none"
-      on:change={on_import_book}
-    />
-    <button on:click={() => document.getElementById("import_book").click()}
-      >Import</button
-    >
-    <div class="group">
-      <label
-        >Print
-        <select bind:value={print_mode}>
-          <option value="pages">Single pages</option>
-          <option value="spreads">Spreads (2-up)</option>
-        </select>
-      </label>
-      {#if print_mode === "spreads"}
-        <label
-          >Gutter <input
-            type="number"
-            min="0"
-            step="1"
-            bind:value={spread_gutter}
-          /> mm</label
-        >
-        <label>
-          Order
-          <select bind:value={arrangement}>
-            <option value="sequential">Editorial (1–2, 3–4…)</option>
-            <option value="booklet">Booklet (printer spreads)</option>
-          </select>
-        </label>
-      {/if}
-    </div>
-    <button class="primary" on:click={print_pdf}>Print / PDF</button>
-  </div>
-
-  <div class="zoombar">
-    <input type="range" min="25" max="200" step="5" bind:value={preview_zoom} />
-
-    <button type="button" on:click={() => (preview_zoom = 100)}>100%</button>
-    <span class="zoomval">{Math.round(preview_zoom)}%</span>
-  </div>
+  <TopbarIO
+    bind:print_mode
+    bind:spread_gutter
+    bind:arrangement
+    bind:preview_zoom
+    {on_export_book}
+    {on_import_book}
+    {print_pdf}
+    {insert_head}
+    {insert_foot}
+    {insert_col_break}
+    {insert_row_break}
+    {insert_page_break}
+    {on_image_input}
+  />
 </div>
 
 <div
   class="workspace"
   style={`grid-template-columns:${left_percent}% 8px ${100 - left_percent}%`}
 >
-  <section class="left" on:dragover|preventDefault={prevent} on:drop={on_drop}>
-    <div class="editor">
-      <div class="header">
-        <div>Markdown</div>
-        <div class="meta">{pages.length} pages · {columns} col</div>
-      </div>
-      <textarea
-        bind:value={markdown}
-        bind:this={ta}
-        spellcheck="false"
-        on:paste={on_paste}
-      ></textarea>
-      <div class="hint storage-indicator">{storage_text}</div>
-    </div>
-  </section>
+  <MarkdownEditor
+    bind:markdown
+    {storage_text}
+    pages_len={pages.length}
+    {columns}
+    {on_paste}
+    {on_drop}
+    {prevent}
+    bind:taEl={ta}
+  />
 
-  <div
-    class="splitter"
-    on:mousedown={on_splitter_down}
-    title="Drag to resize"
-  ></div>
+  <Splitter onDown={on_splitter_down} />
 
   <section class="right">
     <div id="measurer" bind:this={measurer_el} style={measurer_style}>
       {@html hydrated_html}
     </div>
-    <div class="spreads-viewport">
-      <div
-        class="spreads-scale"
-        style={`transform:scale(${zoom_scale}); transform-origin: top left;`}
-      >
-        <div class="spreads">
-          {#each pages as page_html, i}
-            <div class="page" style={page_style}>
-              <div class="page-running-header">{run_heads[i] || ""}</div>
-              <div
-                class="page-inner preview"
-                style={inner_style}
-                class:fullpage={page_html.includes("img-page")}
-              >
-                {@html page_html}
-              </div>
-              <div class="page-running-footer">{run_foots[i] || ""}</div>
-              <div class="page-number {i % 2 === 0 ? 'rig' : 'lef'}">
-                {i + 1}
-              </div>
-            </div>
-          {/each}
-        </div>
-      </div>
-    </div>
 
-    <div id="print-root" aria-hidden="true" style="display:none">
-      {#if print_mode === "pages"}
-        {#each pages as page_html, i}
-          <div class="print-page">
-            <div class="print-running-header">{run_heads[i] || ""}</div>
-            <div
-              class="print-inner"
-              class:fullpage={page_html.includes("img-page")}
-            >
-              {@html page_html}
-            </div>
-            <div class="print-running-footer">{run_foots[i] || ""}</div>
-            <div class="print-page-number {i % 2 === 0 ? 'rig' : 'lef'}">
-              {i + 1}
-            </div>
-          </div>
-        {/each}
-      {:else}
-        {#each sheets as pair, sidx}
-          <div class="print-sheet">
-            <div class="print-page">
-              <div class="print-running-header">
-                {#if sheet_idxs[sidx][0] != null}{run_heads[
-                    sheet_idxs[sidx][0]
-                  ] || ""}{/if}
-              </div>
-              <div
-                class="print-inner"
-                class:fullpage={(pair[0] || "").includes("img-page")}
-                style={inner_style}
-              >
-                {@html pair[0] || ""}
-              </div>
-              <div class="print-running-footer">
-                {#if sheet_idxs[sidx][0] != null}{run_foots[
-                    sheet_idxs[sidx][0]
-                  ] || ""}{/if}
-              </div>
-              <div class="print-page-number lef">
-                {#if sheet_idxs[sidx][0] != null}{sheet_idxs[sidx][0] + 1}{/if}
-              </div>
-            </div>
+    <SpreadsPreview
+      {pages}
+      {run_heads}
+      {run_foots}
+      {page_style}
+      {inner_style}
+      {zoom_scale}
+    />
 
-            <div class="print-gutter"></div>
-
-            <div class="print-page">
-              <div class="print-running-header">
-                {#if sheet_idxs[sidx][1] != null}{run_heads[
-                    sheet_idxs[sidx][1]
-                  ] || ""}{/if}
-              </div>
-              <div
-                class="print-inner"
-                class:fullpage={(pair[1] || "").includes("img-page")}
-                style={inner_style}
-              >
-                {@html pair[1] || ""}
-              </div>
-              <div class="print-running-footer">
-                {#if sheet_idxs[sidx][1] != null}{run_foots[
-                    sheet_idxs[sidx][1]
-                  ] || ""}{/if}
-              </div>
-              <div class="print-page-number rig">
-                {#if sheet_idxs[sidx][1] != null}{sheet_idxs[sidx][1] + 1}{/if}
-              </div>
-            </div>
-          </div>
-        {/each}
-      {/if}
-    </div>
+    <PrintRoot
+      {print_mode}
+      {pages}
+      {sheets}
+      {sheet_idxs}
+      {inner_style}
+      {run_heads}
+      {run_foots}
+    />
   </section>
 </div>
