@@ -428,7 +428,7 @@
     if (m) {
       let cur = parseFloat(m[1]);
       const inner = m[2];
-      const new_size = Math.max(0.5, Math.min(4, cur + delta));
+      const new_size = Math.max(0.5, Math.min(4, cur + delta)).toFixed(2);
       sel = `<span style="font-size:${new_size}em">${inner}</span>`;
     } else {
       const new_size = 1 + delta;
