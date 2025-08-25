@@ -31,7 +31,7 @@
       JSON.stringify(page_sizes.A7.margins)
   );
   let markdown = localStorage.getItem("zine:markdown") ?? default_md;
-  let columns = Number(localStorage.getItem("zine:columns") ?? 1);
+  $: columns = Number(localStorage.getItem("zine:columns") ?? 1);
   let column_gap = Number(localStorage.getItem("zine:column_gap") ?? 5);
   let font_family =
     localStorage.getItem("zine:font_family") ?? "Courier, monospace";
@@ -481,6 +481,9 @@
     {insert_row_break}
     {insert_page_break}
     {on_image_input}
+    {wrap_selection_cols}
+    {wrap_selection_as}
+    {columns}
   />
 </div>
 

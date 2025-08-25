@@ -3,10 +3,13 @@
   export let spread_gutter;
   export let arrangement;
   export let preview_zoom;
+  export let columns;
 
   export let on_export_book = () => {};
   export let on_import_book = () => {};
   export let print_pdf = () => {};
+  export let wrap_selection_as = () => {};
+  export let wrap_selection_cols = () => {};
 
   export let insert_head = () => {};
   export let insert_foot = () => {};
@@ -40,6 +43,10 @@
   />
   <button on:click={() => imgInput.click()}>+ Image</button>
   <button on:click={() => imgFullInput.click()}>+ Full Image</button>
+  <button on:click={() => wrap_selection_as("span-all")}>Span all</button>
+  {#each Array(columns) as _, i}
+    <button on:click={() => wrap_selection_cols(i + 1)}>{i + 1} col</button>
+  {/each}
 
   <button on:click={insert_col_break}>+ Col Break</button>
   <button on:click={insert_row_break}>+ Row Break</button>
@@ -58,7 +65,7 @@
   <button on:click={() => document.getElementById("import_book_input").click()}
     >Import</button
   >
-  
+
   <button class="primary" on:click={on_export_book}>Save</button>
 
   <div class="group">
